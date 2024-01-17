@@ -2,11 +2,18 @@ data "oci_identity_availability_domains" "ADs" {
   compartment_id = var.compartment_ocid
 }
 
+data "oci_core_network_security_groups" "get_network_security_groups_id" {
+  count = var.security_group_name != null ? 1 : 0
+  compartment_id = var.compartment_ocid
+  display_name = var.security_group_name
+  vcn_id = data.oci_core_subnet.get_subnet_infomation.vcn_id
+}
+
 data "oci_core_images" "InstanceImageOCID" {
   compartment_id           = var.compartment_ocid
   operating_system         = var.OS
-  operating_system_version = var.OS_version
-  shape                    = var.instance_type_name
+  operating_system_version = var.OS != "Windows" ? var.OS_version : var.OS_version == "2012" ? "Server 2012 R2 Standard" : "Server ${var.OS_version} Standard"
+  shape                    = var.shape_name
 
   filter {
     name   = "display_name"
@@ -16,7 +23,6 @@ data "oci_core_images" "InstanceImageOCID" {
 }
 
 data "oci_core_subnet" "get_subnet_infomation" {
-  count     = var.security_list != null ? 1 : 0
   subnet_id = var.subnet_ocid
 }
 

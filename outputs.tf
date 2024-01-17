@@ -18,6 +18,33 @@ locals {
       ]
     }
   ], [])
+  security_group_rules = try({
+    security_group_name = oci_core_network_security_group.create_network_security_group[0].display_name
+    ingress = try([
+      for sg_ingress_rule in oci_core_network_security_group_security_rule.ingress :
+      {
+        direction = sg_ingress_rule.direction
+        protocol = sg_ingress_rule.protocol
+        source = sg_ingress_rule.source
+        source_type = sg_ingress_rule.source_type
+        tcp_options = length(sg_ingress_rule.tcp_options) != 0 ? sg_ingress_rule.tcp_options : null
+        udp_options = length(sg_ingress_rule.udp_options) != 0 ? sg_ingress_rule.udp_options : null
+        icmp_options = length(sg_ingress_rule.icmp_options) != 0 ? sg_ingress_rule.icmp_options : null
+      }
+    ],null)
+    egress = try([
+      for sg_egress_rule in oci_core_network_security_group_security_rule.egress :
+      {
+        direction = sg_egress_rule.direction
+        protocol = sg_egress_rule.protocol
+        source = sg_egress_rule.source
+        source_type = sg_egress_rule.source_type
+        tcp_options = length(sg_egress_rule.tcp_options) != 0 ? sg_egress_rule.tcp_options : null
+        udp_options = length(sg_egress_rule.udp_options) != 0 ? sg_egress_rule.udp_options : null
+        icmp_options = length(sg_egress_rule.icmp_options) != 0 ? sg_egress_rule.icmp_options : null
+      }
+    ],null)
+  },null)
   result = tomap({
     "result" : {
       "Instance_information" : {
@@ -35,17 +62,26 @@ locals {
         "user_name" : local.user_name,
         "user_password" : local.password
       },
-      "Volume_Information" : local.volume
+      "Volume_Information" : local.volume,
+      "Security_Group" : local.security_group_rules
     }
   })
 }
 
+# output "result" {
+#   value = local.result
+# }
+
+# resource "local_file" "output_result" {
+#   filename = "${path.cwd}/${var.vm_name}_result.json"
+
+#   content = jsonencode(local.result)
+# }
+
 output "result" {
-  value = local.result
-}
-
-resource "local_file" "output_result" {
-  filename = "${path.cwd}/${var.vm_name}_result.json"
-
-  content = jsonencode(local.result)
+  value = {
+    IP = oci_core_instance.create_instance.public_ip,
+    OS = "${var.OS}-${var.OS_version}",
+    VM_NAME = var.vm_name
+  }
 }
