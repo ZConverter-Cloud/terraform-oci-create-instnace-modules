@@ -133,6 +133,10 @@ Prepare your environment for authenticating and running your Terraform scripts. 
 * To use terraform, you must have a terraform file of command written and a terraform executable.
 * You should create a folder to use terraform, create a terraform.tf file, and enter the contents below.
    ```
+   // Terraform block
+   //
+   // Set to support terraform 1.3.0 or later
+   // provider is fixed at oracle/oci's 4.96.0
    terraform {
       required_version  =  ">= 1.3.0"
       required_providers {
@@ -143,6 +147,9 @@ Prepare your environment for authenticating and running your Terraform scripts. 
       }
    }
 
+   //authentication information of oci
+   //
+   //Applying input information received through a variable called terraform_data
    provider  "oci" {
       tenancy_ocid  = var.terraform_data.provider.tenancy_ocid
       user_ocid  = var.terraform_data.provider.user_ocid
@@ -151,10 +158,22 @@ Prepare your environment for authenticating and running your Terraform scripts. 
       private_key_path  = var.terraform_data.provider.private_key_path
    }
 
+   // In the case of oc, compartment_ocid can be used as an alternative to tenancy_id, 
+   //
+   // so if the user does not enter compartment_ocid, apply it as a substitute to tenany_ocid
    locals {
       compartment_ocid = var.terraform_data.vm_info.compartment_ocid == null ? var.terraform_data.provider.tenancy_ocid : var.terraform_data.vm_info.compartment_ocid
    }
 
+   // The terraform_data variable uses the data entered by the user.
+   //
+   // It is composed of the provider's authentication information input box
+   //
+   // and the vm information input box using the object type. 
+   //
+   // Since there is a lot of data, it is recommended to write the data to be entered
+   //
+   // as json in advance and apply it using -var-file.
    variable "terraform_data" {
       type = object({
          provider = object({
@@ -173,7 +192,7 @@ Prepare your environment for authenticating and running your Terraform scripts. 
                OS_name                 = string
                OS_version              = string
                custom_image_name       = optional(string)
-               boot_volume_size_in_gbs = optional(number)
+               boot_volume_size_in_gbs = optional(number,50)
             })
             network_interface = object({
                subnet_ocid = string
@@ -189,8 +208,8 @@ Prepare your environment for authenticating and running your Terraform scripts. 
             })
             shape = object({
                shape_name          = string
-               shape_cpus          = optional(number)
-               shape_memory_in_gbs = optional(number)
+               shape_cpus          = optional(number,1)
+               shape_memory_in_gbs = optional(number,16)
             })
             ssh_authorized_keys = optional(object({
                ssh_public_key           = optional(string)
@@ -204,7 +223,7 @@ Prepare your environment for authenticating and running your Terraform scripts. 
             private_key_path = null
             region           = null
             tenancy_ocid     = null
-            user_ocid        = null
+            user_ocid        =  null
          }
          vm_info = {
             additional_volumes = []
@@ -242,8 +261,13 @@ Prepare your environment for authenticating and running your Terraform scripts. 
       }
    }
 
+   // Utilize the module and use the association format code stored in the github.
+   //
+   // Start creating an instance by designating the data entered
+   //
+   // as the terraform_data variable as the variable in the module.
    module  "create_oci_instance" {
-      source  =  "git::https://github.com/ZConverter-samples/terraform-oci-create-instnace-modules.git"
+      source  =  "git::https://github.com/ZConverter-Cloud/terraform-oci-create-instnace-modules.git"
       region = var.terraform_data.provider.region
       vm_name = var.terraform_data.vm_info.vm_name
       compartment_ocid = local.compartment_ocid
@@ -254,7 +278,7 @@ Prepare your environment for authenticating and running your Terraform scripts. 
       OS_version = var.terraform_data.vm_info.OS.OS_version
       custom_image_name = var.terraform_data.vm_info.OS.custom_image_name
       boot_volume_size_in_gbs = var.terraform_data.vm_info.OS.boot_volume_size_in_gbs
-   
+
       subnet_ocid = var.terraform_data.vm_info.network_interface.subnet_ocid
       create_security_group_rules = var.terraform_data.vm_info.network_interface.create_security_group_rules
 
@@ -267,6 +291,9 @@ Prepare your environment for authenticating and running your Terraform scripts. 
       ssh_public_key_file_path = var.terraform_data.vm_info.ssh_authorized_keys.ssh_public_key_file_path
    }
 
+   // After the module creates an instance,
+   //
+   // it outputs the information of the instance.
    output "result" {
       value = module.create_oci_instance.result
    }
