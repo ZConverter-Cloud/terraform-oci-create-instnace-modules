@@ -11,7 +11,7 @@
 
 ## Before You Begin
 To successfully perform this tutorial, you must have the following:
-   * You need to install [git](https://git-scm.com/downloads) in advance to use it.
+   * You need to install [git](https://git-scm.com/downloads) in advance to use it. - **Reboot Required**
    * An Oracle Cloud Infrastructure account. [See Signing Up for Oracle Cloud Infrastructure](https://docs.oracle.com/en-us/iaas/Content/GSG/Tasks/signingup.htm)
    * A MacOS, Linux, or Windows environment:
    * MacOS
